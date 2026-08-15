@@ -1,0 +1,31 @@
+name: Create SecureVault Backlog
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - copilot/securevault-backlog-creation
+    paths:
+      - 'scripts/create_backlog.py'
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-backlog:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run backlog creation script
+        run: python3 scripts/create_backlog.py
