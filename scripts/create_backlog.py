@@ -43,18 +43,18 @@ def create_milestone(title, description):
         print(f"  milestone: {title}")
 
 
-def get_milestone_number(title):
+def milestone_exists(title):
     result = gh("api", f"/repos/{REPO}/milestones",
-                "--jq", f'.[] | select(.title=="{title}") | .number')
-    return result.stdout.strip()
+                "--jq", f'.[] | select(.title=="{title}") | .title')
+    return bool(result.stdout.strip())
 
 
-def create_issue(title, labels, milestone_num, body):
+def create_issue(title, labels, milestone, body):
     result = gh("issue", "create",
                 "--repo", REPO,
                 "--title", title,
                 "--label", labels,
-                "--milestone", milestone_num,
+                "--milestone", milestone,
                 "--body", body,
                 check=False)
     if result.returncode != 0:
@@ -3400,14 +3400,13 @@ def main():
     for title, desc in MILESTONES:
         create_milestone(title, desc)
 
-    # 3. Fetch milestone numbers
-    print("\n[3/4] Fetching milestone numbers...")
-    ms_map = {}
+    # 3. Verify milestones exist
+    print("\n[3/4] Verifying milestones...")
+    milestone_titles = set()
     for title, _ in MILESTONES:
-        num = get_milestone_number(title)
-        if num:
-            ms_map[title] = num
-            print(f"  milestone '{title}' = #{num}")
+        if milestone_exists(title):
+            milestone_titles.add(title)
+            print(f"  milestone: {title}")
         else:
             print(f"  WARN: could not find milestone '{title}'")
 
@@ -3416,12 +3415,11 @@ def main():
     created = 0
     skipped = 0
     for title, labels, ms_key, body in ISSUES:
-        ms_num = ms_map.get(ms_key, "")
-        if not ms_num:
-            print(f"  WARN: skipping '{title}' — no milestone number for '{ms_key}'")
+        if ms_key not in milestone_titles:
+            print(f"  WARN: skipping '{title}' — milestone '{ms_key}' not found")
             skipped += 1
             continue
-        create_issue(title, labels, ms_num, body)
+        create_issue(title, labels, ms_key, body)
         created += 1
 
     print("\n" + "=" * 60)
