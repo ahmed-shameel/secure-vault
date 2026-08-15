@@ -1,7 +1,11 @@
 name: Create SecureVault Backlog
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - copilot/securevault-backlog-creation
+    paths:
+      - '.github/workflows/create-backlog.yml'
 
 permissions:
   issues: write
